@@ -348,10 +348,17 @@
                 </div>
             </div>
 
-            <div class="p-4 border-t bg-gray-100 flex justify-end space-x-4">
-                <button onclick="removeReportFromBoard()" id="btn-remove-board" class="px-4 py-2 border border-gray-400 text-gray-700 rounded hover:bg-gray-200 hidden"><i class="fa-solid fa-thumbtack-slash mr-1"></i>朝礼ボードから外す</button>
-                <button onclick="closeDetailsModal()" class="px-4 py-2 border rounded bg-white hover:bg-gray-50">閉じる</button>
-                <button onclick="saveDetails()" class="px-6 py-2 bg-green-600 text-white rounded font-bold hover:bg-green-700 shadow">更新を保存</button>
+            <!-- フッター（削除ボタン追加版） -->
+            <div class="p-4 border-t bg-gray-100 flex justify-between items-center">
+                <!-- 左側：削除ボタン -->
+                <button onclick="deleteReport()" class="px-4 py-2 text-red-600 bg-white border border-red-300 rounded hover:bg-red-50 transition shadow-sm font-semibold text-sm"><i class="fa-solid fa-trash mr-1"></i>報告を削除</button>
+                
+                <!-- 右側：その他の操作 -->
+                <div class="flex space-x-2 md:space-x-3">
+                    <button onclick="removeReportFromBoard()" id="btn-remove-board" class="px-3 md:px-4 py-2 border border-gray-400 text-gray-700 rounded hover:bg-gray-200 hidden bg-white text-sm"><i class="fa-solid fa-thumbtack-slash mr-1"></i>ボードから外す</button>
+                    <button onclick="closeDetailsModal()" class="px-3 md:px-4 py-2 border rounded bg-white hover:bg-gray-50 text-sm">閉じる</button>
+                    <button onclick="saveDetails()" class="px-4 md:px-6 py-2 bg-green-600 text-white rounded font-bold hover:bg-green-700 shadow text-sm">更新を保存</button>
+                </div>
             </div>
         </div>
     </div>
@@ -946,6 +953,17 @@
             }
         }
 
+        function deleteReport() {
+            if (!currentEditingReportId) return;
+            if (confirm("本当にこの報告データを完全に削除しますか？\n（※この操作は取り消せません）")) {
+                reports = reports.filter(r => r.id !== currentEditingReportId);
+                localStorage.setItem('dialysisReports', JSON.stringify(reports));
+                closeDetailsModal();
+                renderHistory();
+                renderBoard();
+            }
+        }
+
         // 詳細画面からの写真追加・削除処理
         function addPhotoToExisting(isCamera, event = null) {
             const r = reports.find(x => x.id === currentEditingReportId);
@@ -985,6 +1003,18 @@
             }
         }
 
+        // PWA Service Worker 登録
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                .then(registration => {
+                    console.log('ServiceWorker registration successful:', registration.scope);
+                })
+                .catch(error => {
+                    console.log('ServiceWorker registration failed:', error);
+                });
+            });
+        }
     </script>
 </body>
 </html>

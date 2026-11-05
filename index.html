@@ -22,9 +22,9 @@
         ::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
         ::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #a8a8a8; }
-        /* レイヤーお絵かき用キャンバスの重ね合わせ */
-        .canvas-container { position: relative; width: 100%; max-width: 800px; margin: 0 auto; background: #000; touch-action: none; }
-        .layer-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+        /* レイヤーお絵かき用キャンバスの重ね合わせ（スクロール防止強化） */
+        .canvas-container { position: relative; background: #222; touch-action: none; display: inline-block; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+        .layer-canvas { position: absolute; top: 0; left: 0; touch-action: none; outline: none; }
     </style>
 </head>
 <body class="bg-gray-100 h-screen flex overflow-hidden font-sans text-gray-800">
@@ -38,7 +38,7 @@
             <button onclick="switchTab('board')" id="tab-board" class="w-full flex items-center p-3 rounded-lg hover:bg-blue-800 transition-colors bg-blue-800"><i class="fa-solid fa-chalkboard-user w-6"></i> 朝礼ボード</button>
             <button onclick="switchTab('new')" id="tab-new" class="w-full flex items-center p-3 rounded-lg hover:bg-blue-800 transition-colors"><i class="fa-solid fa-pen-to-square w-6"></i> 新規報告</button>
             <button onclick="switchTab('history')" id="tab-history" class="w-full flex items-center p-3 rounded-lg hover:bg-blue-800 transition-colors"><i class="fa-solid fa-table-list w-6"></i> トラブル履歴</button>
-            <button onclick="switchTab('master')" id="tab-master" class="w-full flex items-center p-3 rounded-lg hover:bg-blue-800 transition-colors"><i class="fa-solid fa-users-gear w-6"></i> 患者マスター</button>
+            <button onclick="switchTab('master')" id="tab-master" class="w-full flex items-center p-3 rounded-lg hover:bg-blue-800 transition-colors"><i class="fa-solid fa-users-gear w-6"></i> マスター管理</button>
         </nav>
     </aside>
 
@@ -55,7 +55,6 @@
         
         <!-- ==================== 朝礼ボード画面 ==================== -->
         <div id="screen-board" class="h-full flex flex-col p-2 md:p-4">
-            <!-- ヘッダー（コンパクト化） -->
             <div class="flex flex-wrap items-center justify-between bg-white p-2 rounded shadow mb-2 text-sm">
                 <h2 class="font-bold text-blue-900 mr-4"><i class="fa-solid fa-chalkboard-user mr-1"></i>朝礼ボード</h2>
                 <div class="flex space-x-2">
@@ -67,27 +66,20 @@
                 </div>
             </div>
 
-            <!-- ボード領域（内側スクロール対応） -->
             <div class="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-4 min-h-0">
-                <!-- 未対応リスト -->
                 <div class="bg-red-50 rounded-lg shadow border-t-4 border-red-500 flex flex-col">
                     <div class="p-2 bg-red-100 text-red-800 font-bold flex justify-between items-center text-sm">
                         <span>未対応 / 要対応アクション</span>
                         <span id="board-unresolved-count" class="bg-red-500 text-white rounded-full px-2 py-0.5 text-xs">0件</span>
                     </div>
-                    <div id="board-unresolved-list" class="p-2 overflow-y-auto max-h-[65vh] space-y-3">
-                        <!-- JSで描画 -->
-                    </div>
+                    <div id="board-unresolved-list" class="p-2 overflow-y-auto max-h-[65vh] space-y-3"></div>
                 </div>
-                <!-- 対応済リスト -->
                 <div class="bg-green-50 rounded-lg shadow border-t-4 border-green-500 flex flex-col">
                     <div class="p-2 bg-green-100 text-green-800 font-bold flex justify-between items-center text-sm">
                         <span>対応済 (共有事項)</span>
                         <span id="board-resolved-count" class="bg-green-500 text-white rounded-full px-2 py-0.5 text-xs">0件</span>
                     </div>
-                    <div id="board-resolved-list" class="p-2 overflow-y-auto max-h-[65vh] space-y-3">
-                        <!-- JSで描画 -->
-                    </div>
+                    <div id="board-resolved-list" class="p-2 overflow-y-auto max-h-[65vh] space-y-3"></div>
                 </div>
             </div>
         </div>
@@ -97,39 +89,37 @@
             <div class="max-w-4xl mx-auto bg-white rounded-xl shadow-md p-6">
                 <h2 class="text-2xl font-bold text-gray-800 mb-6 border-b pb-2">新規トラブル報告</h2>
                 <form id="new-report-form" onsubmit="submitReport(event)">
-                    <!-- 2列グリッドレイアウト -->
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        
-                        <!-- 左列 -->
                         <div class="space-y-4">
                             <div>
                                 <label class="block text-sm font-semibold text-gray-700 mb-1">クール選択 <span class="text-red-500">*</span></label>
                                 <div class="flex space-x-4">
                                     <label class="flex items-center space-x-2 cursor-pointer p-2 border rounded hover:bg-gray-50 flex-1">
-                                        <input type="radio" name="shift" value="月水金" required class="w-4 h-4 text-blue-600">
-                                        <span>月水金 クール</span>
+                                        <input type="radio" name="shift" value="月水金" required class="w-4 h-4 text-blue-600"><span>月水金 クール</span>
                                     </label>
                                     <label class="flex items-center space-x-2 cursor-pointer p-2 border rounded hover:bg-gray-50 flex-1">
-                                        <input type="radio" name="shift" value="火木土" required class="w-4 h-4 text-blue-600">
-                                        <span>火木土 クール</span>
+                                        <input type="radio" name="shift" value="火木土" required class="w-4 h-4 text-blue-600"><span>火木土 クール</span>
                                     </label>
                                 </div>
                             </div>
-
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-1">患者ID <span class="text-red-500">*</span></label>
-                                <input type="text" id="input-patient-id" required class="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="ID入力で名前を自動入力" oninput="autoFillPatientName()">
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-1">患者ID <span class="text-red-500">*</span></label>
+                                    <input type="text" id="input-patient-id" required class="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500" placeholder="ID入力で連動" oninput="autoFillPatientName()">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-1">報告者（CE） <span class="text-red-500">*</span></label>
+                                    <select id="input-reporter" required class="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 bg-blue-50"></select>
+                                </div>
                             </div>
-
                             <div>
                                 <label class="block text-sm font-semibold text-gray-700 mb-1">患者氏名 <span class="text-red-500">*</span></label>
-                                <input type="text" id="input-patient-name" list="patient-list" required class="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="リストから選択または入力">
+                                <input type="text" id="input-patient-name" list="patient-list" required class="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500" placeholder="リストから選択または入力">
                                 <datalist id="patient-list"></datalist>
                             </div>
-
                             <div>
                                 <label class="block text-sm font-semibold text-gray-700 mb-1">カテゴリ <span class="text-red-500">*</span></label>
-                                <select id="input-category" required class="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <select id="input-category" required class="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500">
                                     <option value="">選択してください</option>
                                     <option value="穿刺トラブル">穿刺トラブル</option>
                                     <option value="初回穿刺">初回穿刺</option>
@@ -142,13 +132,11 @@
                             </div>
                         </div>
 
-                        <!-- 右列 -->
                         <div class="space-y-4 flex flex-col">
                             <div class="flex-1 flex flex-col">
                                 <label class="block text-sm font-semibold text-gray-700 mb-1">詳細内容 <span class="text-red-500">*</span></label>
-                                <textarea id="input-details" required rows="5" class="w-full flex-1 p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="トラブルの状況や経緯を具体的に記入してください"></textarea>
+                                <textarea id="input-details" required rows="5" class="w-full flex-1 p-2 border rounded focus:ring-2 focus:ring-blue-500" placeholder="トラブルの状況や経緯を具体的に記入してください"></textarea>
                             </div>
-
                             <div>
                                 <label class="block text-sm font-semibold text-gray-700 mb-1">写真添付（最大3枚）</label>
                                 <div class="flex space-x-2 mb-2">
@@ -160,14 +148,10 @@
                                     </button>
                                     <input type="file" id="file-upload" accept="image/*" class="hidden" onchange="handleFileUpload(event)">
                                 </div>
-                                <p class="text-xs text-gray-500 mb-2">※撮影後に矢印などの書き込みが可能です。</p>
-                                <div id="photo-preview-container" class="grid grid-cols-3 gap-2">
-                                    <!-- プレビュー画像がここに入る -->
-                                </div>
+                                <div id="photo-preview-container" class="grid grid-cols-3 gap-2"></div>
                             </div>
                         </div>
                     </div>
-
                     <div class="mt-8 pt-4 border-t flex justify-end">
                         <button type="button" onclick="clearForm()" class="px-6 py-2 border rounded text-gray-600 hover:bg-gray-50 mr-4">クリア</button>
                         <button type="submit" class="px-8 py-2 bg-blue-600 text-white rounded font-bold hover:bg-blue-700 shadow-md">報告を登録する</button>
@@ -189,32 +173,27 @@
                             <tr>
                                 <th class="px-4 py-3">発生日時</th>
                                 <th class="px-4 py-3">患者ID/氏名</th>
-                                <th class="px-4 py-3">クール</th>
+                                <th class="px-4 py-3">報告者</th>
                                 <th class="px-4 py-3">カテゴリ</th>
                                 <th class="px-4 py-3">ステータス</th>
                                 <th class="px-4 py-3">アクション</th>
                             </tr>
                         </thead>
-                        <tbody id="history-table-body" class="divide-y">
-                            <!-- JSで描画 -->
-                        </tbody>
+                        <tbody id="history-table-body" class="divide-y"></tbody>
                     </table>
                 </div>
             </div>
         </div>
 
-        <!-- ==================== 患者マスター管理画面 ==================== -->
+        <!-- ==================== マスター管理画面 ==================== -->
         <div id="screen-master" class="hidden h-full overflow-y-auto p-4 md:p-8">
-            <div class="max-w-3xl mx-auto bg-white rounded-xl shadow-md p-6">
+            <div class="max-w-3xl mx-auto bg-white rounded-xl shadow-md p-6 mb-8">
                 <h2 class="text-2xl font-bold text-gray-800 mb-6 border-b pb-2"><i class="fa-solid fa-users-gear mr-2 text-blue-600"></i>患者マスター管理</h2>
-                
                 <div class="mb-8 p-4 border border-blue-200 bg-blue-50 rounded-lg">
                     <h3 class="font-bold text-blue-800 mb-2">Excelから一括読み込み</h3>
-                    <p class="text-sm text-blue-600 mb-4">A列に「患者ID」、B列に「患者名」が入力されたExcelファイルを選択してください。</p>
                     <input type="file" id="excel-file" accept=".xlsx, .xls" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700 cursor-pointer">
                     <button onclick="importExcel()" class="mt-4 bg-blue-600 text-white px-4 py-2 rounded shadow hover:bg-blue-700 text-sm">インポート実行</button>
                 </div>
-
                 <div class="mb-6 p-4 border rounded-lg bg-gray-50">
                     <h3 class="font-bold text-gray-700 mb-2">手動で新規追加</h3>
                     <div class="flex space-x-2">
@@ -223,21 +202,32 @@
                         <button onclick="addManualPatient()" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"><i class="fa-solid fa-plus"></i> 追加</button>
                     </div>
                 </div>
-
                 <div>
                     <h3 class="font-bold text-gray-700 mb-2">現在の登録データ (<span id="master-count">0</span>件)</h3>
-                    <div class="border rounded overflow-y-auto max-h-96">
+                    <div class="border rounded overflow-y-auto max-h-64">
                         <table class="w-full text-sm text-left">
-                            <thead class="bg-gray-100 sticky top-0">
-                                <tr>
-                                    <th class="px-4 py-2">患者ID</th>
-                                    <th class="px-4 py-2">患者氏名</th>
-                                    <th class="px-4 py-2 w-20 text-center">削除</th>
-                                </tr>
-                            </thead>
-                            <tbody id="master-table-body" class="divide-y">
-                                <!-- JSで描画 -->
-                            </tbody>
+                            <thead class="bg-gray-100 sticky top-0"><tr><th class="px-4 py-2">患者ID</th><th class="px-4 py-2">患者氏名</th><th class="px-4 py-2 w-20 text-center">削除</th></tr></thead>
+                            <tbody id="master-table-body" class="divide-y"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <!-- スタッフマスター管理 -->
+            <div class="max-w-3xl mx-auto bg-white rounded-xl shadow-md p-6">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6 border-b pb-2"><i class="fa-solid fa-user-nurse mr-2 text-blue-600"></i>スタッフ（CE）マスター管理</h2>
+                <div class="mb-6 p-4 border rounded-lg bg-gray-50">
+                    <h3 class="font-bold text-gray-700 mb-2">スタッフの追加</h3>
+                    <div class="flex space-x-2">
+                        <input type="text" id="manual-staff-name" placeholder="スタッフ氏名（例: 田中）" class="border rounded p-2 flex-1">
+                        <button onclick="addStaff()" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"><i class="fa-solid fa-plus"></i> 追加</button>
+                    </div>
+                </div>
+                <div>
+                    <h3 class="font-bold text-gray-700 mb-2">現在の登録スタッフ (<span id="staff-count">0</span>名)</h3>
+                    <div class="border rounded overflow-y-auto max-h-64 bg-white">
+                        <table class="w-full text-sm text-left">
+                            <thead class="bg-gray-100 sticky top-0"><tr><th class="px-4 py-2">スタッフ氏名</th><th class="px-4 py-2 w-20 text-center">削除</th></tr></thead>
+                            <tbody id="staff-table-body" class="divide-y"></tbody>
                         </table>
                     </div>
                 </div>
@@ -250,22 +240,25 @@
     <div id="modal-camera" class="fixed inset-0 bg-black z-[100] hidden flex flex-col">
         <div class="absolute top-0 w-full p-4 flex justify-between items-center z-10 bg-gradient-to-b from-black/70 to-transparent">
             <span class="text-white font-bold tracking-widest text-sm shadow-sm">患部撮影</span>
-            <button onclick="closeCamera()" class="text-white bg-black/50 hover:bg-white/20 rounded-full w-10 h-10 flex items-center justify-center text-xl">
-                <i class="fa-solid fa-xmark"></i>
-            </button>
+            <button onclick="closeCamera()" class="text-white bg-black/50 hover:bg-white/20 rounded-full w-10 h-10 flex items-center justify-center text-xl"><i class="fa-solid fa-xmark"></i></button>
         </div>
         <div class="flex-1 relative bg-black flex items-center justify-center overflow-hidden">
-            <video id="camera-video" autoplay playsinline class="absolute min-w-full min-h-full object-cover"></video>
+            <video id="camera-video" autoplay playsinline class="absolute min-w-full min-h-full object-contain"></video>
         </div>
         <div class="h-32 bg-black flex items-center justify-center pb-8 z-10">
-            <!-- シャッターボタン -->
             <button onclick="takePhoto()" class="w-20 h-20 bg-white rounded-full border-4 border-gray-300 active:bg-gray-300 transition-colors shadow-[0_0_0_4px_black_inset]"></button>
         </div>
         <canvas id="camera-canvas" class="hidden"></canvas>
     </div>
 
-    <!-- ==================== お絵かき・編集モーダル (2層レイヤー仕様) ==================== -->
-    <div id="modal-draw" class="fixed inset-0 bg-black/90 z-[90] hidden flex flex-col items-center justify-center p-2 md:p-4">
+    <!-- ==================== 写真拡大ビューワー（新機能） ==================== -->
+    <div id="modal-viewer" class="fixed inset-0 bg-black/90 z-[110] hidden flex flex-col items-center justify-center">
+        <button onclick="closeViewer()" class="absolute top-4 right-4 text-white bg-white/20 hover:bg-white/40 rounded-full w-12 h-12 flex items-center justify-center text-2xl z-10"><i class="fa-solid fa-xmark"></i></button>
+        <img id="viewer-img" src="" class="max-w-full max-h-full object-contain p-2">
+    </div>
+
+    <!-- ==================== お絵かき・編集モーダル ==================== -->
+    <div id="modal-draw" class="fixed inset-0 bg-black/90 z-[90] hidden flex flex-col items-center justify-center p-2 md:p-4 touch-none">
         <div class="w-full max-w-4xl bg-white rounded-lg flex flex-col overflow-hidden max-h-[95vh]">
             <div class="p-3 border-b bg-gray-100 flex justify-between items-center">
                 <h3 class="font-bold">写真への書き込み（編集）</h3>
@@ -273,19 +266,17 @@
             </div>
             
             <div class="p-2 flex justify-center space-x-2 bg-gray-50 border-b">
-                <button onclick="setPen('red')" class="w-10 h-10 rounded-full bg-red-500 border-2 border-white shadow hover:scale-110 transition ring-2 ring-transparent focus:ring-blue-500" title="赤ペン"></button>
-                <button onclick="setPen('blue')" class="w-10 h-10 rounded-full bg-blue-500 border-2 border-white shadow hover:scale-110 transition ring-2 ring-transparent focus:ring-blue-500" title="青ペン"></button>
-                <button onclick="setPen('black')" class="w-10 h-10 rounded-full bg-black border-2 border-white shadow hover:scale-110 transition ring-2 ring-transparent focus:ring-blue-500" title="黒ペン"></button>
+                <button onclick="setPen('red')" class="w-10 h-10 rounded-full bg-red-500 border-2 border-white shadow ring-2 ring-transparent focus:ring-blue-500"></button>
+                <button onclick="setPen('blue')" class="w-10 h-10 rounded-full bg-blue-500 border-2 border-white shadow ring-2 ring-transparent focus:ring-blue-500"></button>
+                <button onclick="setPen('black')" class="w-10 h-10 rounded-full bg-black border-2 border-white shadow ring-2 ring-transparent focus:ring-blue-500"></button>
                 <div class="w-px bg-gray-300 mx-2"></div>
-                <button onclick="setEraser()" id="btn-eraser" class="px-3 py-1 bg-gray-200 rounded shadow hover:bg-gray-300 border border-gray-300 font-bold text-sm"><i class="fa-solid fa-eraser mr-1"></i>消しゴム</button>
-                <button onclick="clearDraw()" class="px-3 py-1 bg-yellow-100 text-yellow-800 rounded shadow hover:bg-yellow-200 border border-yellow-300 text-sm"><i class="fa-solid fa-rotate-right mr-1"></i>リセット</button>
+                <button onclick="setEraser()" id="btn-eraser" class="px-3 py-1 bg-gray-200 rounded shadow border border-gray-300 font-bold text-sm"><i class="fa-solid fa-eraser mr-1"></i>消しゴム</button>
+                <button onclick="clearDraw()" class="px-3 py-1 bg-yellow-100 text-yellow-800 rounded shadow border border-yellow-300 text-sm"><i class="fa-solid fa-rotate-right mr-1"></i>リセット</button>
             </div>
 
-            <div class="flex-1 bg-gray-200 p-2 overflow-hidden flex items-center justify-center" id="canvas-wrapper">
+            <div class="flex-1 bg-gray-300 p-2 overflow-hidden flex items-center justify-center touch-none" id="canvas-wrapper">
                 <div class="canvas-container" id="layer-container">
-                    <!-- 写真描画用レイヤー（下敷き） -->
                     <canvas id="base-canvas" class="layer-canvas"></canvas>
-                    <!-- お絵かき用レイヤー（透明フィルム） -->
                     <canvas id="draw-canvas" class="layer-canvas" style="cursor: crosshair;"></canvas>
                 </div>
             </div>
@@ -298,23 +289,25 @@
     </div>
 
     <!-- ==================== 履歴詳細・対応入力モーダル ==================== -->
-    <div id="modal-details" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white w-full max-w-3xl rounded-xl shadow-2xl flex flex-col max-h-[90vh]">
+    <div id="modal-details" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-2 md:p-4">
+        <div class="bg-white w-full max-w-4xl rounded-xl shadow-2xl flex flex-col max-h-[95vh] md:max-h-[90vh]">
             <div class="p-4 border-b flex justify-between items-center bg-blue-900 text-white rounded-t-xl">
                 <h3 class="text-xl font-bold">トラブル詳細・対応記録</h3>
                 <button onclick="closeDetailsModal()" class="hover:text-gray-300"><i class="fa-solid fa-xmark text-2xl"></i></button>
             </div>
             
-            <div class="p-6 overflow-y-auto flex-1 space-y-6">
-                <!-- 報告内容表示 -->
-                <div class="grid grid-cols-2 gap-4 text-sm bg-gray-50 p-4 rounded border">
-                    <div><span class="text-gray-500 block text-xs">患者</span><span id="detail-patient" class="font-bold text-lg"></span></div>
-                    <div><span class="text-gray-500 block text-xs">日時</span><span id="detail-date" class="font-semibold"></span></div>
-                    <div><span class="text-gray-500 block text-xs">カテゴリ</span><span id="detail-category" class="inline-block bg-blue-100 text-blue-800 px-2 py-1 rounded"></span></div>
+            <div class="p-4 md:p-6 overflow-y-auto flex-1 space-y-4 md:space-y-6">
+                <!-- 基本情報 -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm bg-gray-50 p-4 rounded border">
+                    <div class="col-span-2"><span class="text-gray-500 block text-xs">患者</span><span id="detail-patient" class="font-bold text-lg"></span></div>
+                    <div class="col-span-2"><span class="text-gray-500 block text-xs">報告者</span><span id="detail-reporter" class="font-bold text-lg text-blue-800"></span></div>
+                    <div><span class="text-gray-500 block text-xs">発生日時</span><span id="detail-date" class="font-semibold"></span></div>
                     <div><span class="text-gray-500 block text-xs">クール</span><span id="detail-shift"></span></div>
-                    <div class="col-span-2">
+                    <div class="col-span-2"><span class="text-gray-500 block text-xs">カテゴリ</span><span id="detail-category" class="inline-block bg-blue-100 text-blue-800 px-2 py-1 rounded"></span></div>
+                    
+                    <div class="col-span-2 md:col-span-4 mt-2">
                         <span class="text-gray-500 block text-xs mb-1">詳細内容</span>
-                        <p id="detail-text" class="whitespace-pre-wrap bg-white p-3 border rounded"></p>
+                        <p id="detail-text" class="whitespace-pre-wrap bg-white p-3 border rounded text-base"></p>
                     </div>
                 </div>
 
@@ -328,10 +321,7 @@
                             <input type="file" id="edit-file-upload" accept="image/*" class="hidden" onchange="addPhotoToExisting(false, event)">
                         </div>
                     </div>
-                    <p class="text-xs text-gray-500 mb-2">※画像をタップすると手書き編集（上書き）ができます。</p>
-                    <div id="detail-photos" class="grid grid-cols-3 gap-3">
-                        <!-- JSで描画 -->
-                    </div>
+                    <div id="detail-photos" class="grid grid-cols-3 gap-3"></div>
                 </div>
 
                 <!-- 対応記録入力 -->
@@ -339,223 +329,166 @@
                     <h4 class="font-bold text-gray-700 border-l-4 border-green-600 pl-2 mb-2">対応記録・結果</h4>
                     <div class="flex items-center mb-3">
                         <label class="font-semibold mr-4">ステータス:</label>
-                        <select id="detail-status" class="border rounded p-2 bg-yellow-50 focus:ring-2 focus:ring-blue-500 font-bold">
+                        <select id="detail-status" class="border rounded p-2 bg-yellow-50 focus:ring-2 focus:ring-blue-500 font-bold" onchange="toggleChecklistUI()">
                             <option value="未対応" class="text-red-600">未対応</option>
                             <option value="対応済" class="text-green-600">対応済</option>
                         </select>
                     </div>
-                    <textarea id="detail-resolution" rows="4" class="w-full p-2 border rounded focus:ring-2 focus:ring-green-500" placeholder="対処した内容や、申し送り事項を記入してください"></textarea>
+                    <textarea id="detail-resolution" rows="3" class="w-full p-2 border rounded focus:ring-2 focus:ring-green-500" placeholder="対処内容や申し送り事項を記入してください"></textarea>
+                </div>
+
+                <!-- 全員確認チェックエリア -->
+                <div id="confirmation-section" class="border-t border-dashed border-gray-400 pt-4 hidden bg-yellow-50 p-3 rounded-lg">
+                    <div class="flex flex-col md:flex-row md:justify-between md:items-center mb-3">
+                        <h4 class="font-bold text-gray-800"><i class="fa-solid fa-check-double text-green-600 mr-2"></i>朝礼ボード確認チェック</h4>
+                        <span class="text-xs text-red-600 font-bold bg-white px-2 py-1 rounded border border-red-200 mt-2 md:mt-0">※全員チェック完了でボードから外せます</span>
+                    </div>
+                    <div id="staff-checklist" class="flex flex-wrap gap-2 text-sm"></div>
                 </div>
             </div>
 
-            <!-- フッター（削除ボタン追加版） -->
-            <div class="p-4 border-t bg-gray-100 flex justify-between items-center">
-                <!-- 左側：削除ボタン -->
-                <button onclick="deleteReport()" class="px-4 py-2 text-red-600 bg-white border border-red-300 rounded hover:bg-red-50 transition shadow-sm font-semibold text-sm"><i class="fa-solid fa-trash mr-1"></i>報告を削除</button>
-                
-                <!-- 右側：その他の操作 -->
-                <div class="flex space-x-2 md:space-x-3">
-                    <button onclick="removeReportFromBoard()" id="btn-remove-board" class="px-3 md:px-4 py-2 border border-gray-400 text-gray-700 rounded hover:bg-gray-200 hidden bg-white text-sm"><i class="fa-solid fa-thumbtack-slash mr-1"></i>ボードから外す</button>
-                    <button onclick="closeDetailsModal()" class="px-3 md:px-4 py-2 border rounded bg-white hover:bg-gray-50 text-sm">閉じる</button>
-                    <button onclick="saveDetails()" class="px-4 md:px-6 py-2 bg-green-600 text-white rounded font-bold hover:bg-green-700 shadow text-sm">更新を保存</button>
+            <!-- フッター -->
+            <div class="p-3 md:p-4 border-t bg-gray-100 flex justify-between items-center">
+                <button onclick="deleteReport()" class="px-3 py-2 text-red-600 bg-white border border-red-300 rounded hover:bg-red-50 text-xs md:text-sm font-semibold"><i class="fa-solid fa-trash md:mr-1"></i><span class="hidden md:inline">削除</span></button>
+                <div class="flex space-x-2">
+                    <button onclick="removeReportFromBoard()" id="btn-remove-board" class="px-3 py-2 border border-gray-400 text-gray-700 rounded bg-white text-xs md:text-sm font-bold shadow-sm transition-all duration-300 hidden" disabled><i class="fa-solid fa-thumbtack-slash mr-1"></i>ボード解除</button>
+                    <button onclick="closeDetailsModal()" class="px-4 py-2 border rounded bg-white hover:bg-gray-50 text-sm">閉じる</button>
+                    <button onclick="saveDetails()" class="px-6 py-2 bg-green-600 text-white rounded font-bold hover:bg-green-700 shadow text-sm">保存</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- JavaScript ロジック -->
+    <!-- JavaScript -->
     <script>
         // ================= アプリケーション状態 =================
         let patients = JSON.parse(localStorage.getItem('dialysisPatients')) || [];
         let reports = JSON.parse(localStorage.getItem('dialysisReports')) || [];
-        let currentPhotos = []; // 新規報告用の一時写真
+        let currentPhotos = [];
         let currentEditingReportId = null; 
         
-        // お絵かきレイヤー関連
-        let isDrawing = false;
-        let drawingTool = 'pen'; // 'pen' or 'eraser'
-        let drawingColor = 'red';
-        let originalImageObj = null; // 下敷きのオリジナル写真
-        let editingIndex = -1; // -1は新規、0以上は既存写真のインデックス
+        const defaultStaff = ["恩田", "杉本", "森", "石井", "塩澤", "鈴木", "國吉", "西山", "菅澤", "村戸", "長谷川", "和田", "伊丹", "菅原", "黒坂", "村田"];
+        let ceStaff = JSON.parse(localStorage.getItem('dialysisStaff'));
+        if (!ceStaff || ceStaff.length === 0) {
+            ceStaff = defaultStaff;
+            localStorage.setItem('dialysisStaff', JSON.stringify(ceStaff));
+        }
 
-        // WebRTCカメラ
+        let isDrawing = false;
+        let drawingTool = 'pen';
+        let drawingColor = 'red';
+        let originalImageObj = null;
+        let editingIndex = -1;
         let cameraStream = null;
 
         // ================= 初期化処理 =================
         window.onload = () => {
             updatePatientDatalist();
             renderMaster();
-            // 初期タブ
+            renderStaffMaster();
+            updateReporterSelect();
             switchTab('board');
         };
 
-        // ================= タブ切り替え =================
         function switchTab(tabId) {
-            const screens = ['board', 'new', 'history', 'master'];
-            screens.forEach(id => {
+            ['board', 'new', 'history', 'master'].forEach(id => {
                 document.getElementById(`screen-${id}`).classList.add('hidden');
                 document.getElementById(`tab-${id}`)?.classList.remove('bg-blue-800');
             });
             document.getElementById(`screen-${tabId}`).classList.remove('hidden');
             document.getElementById(`tab-${tabId}`)?.classList.add('bg-blue-800');
-
             if (tabId === 'board') renderBoard();
             if (tabId === 'history') renderHistory();
-            if (tabId === 'master') renderMaster();
         }
 
-        // ================= 患者マスター管理 =================
-        function updatePatientDatalist() {
-            const datalist = document.getElementById('patient-list');
-            datalist.innerHTML = patients.map(p => `<option value="${p.name}"></option>`).join('');
-        }
-
+        // ================= マスター関連 =================
+        function updatePatientDatalist() { document.getElementById('patient-list').innerHTML = patients.map(p => `<option value="${p.name}"></option>`).join(''); }
         function autoFillPatientName() {
-            const idInput = document.getElementById('input-patient-id').value.trim();
-            const nameInput = document.getElementById('input-patient-name');
-            const patient = patients.find(p => p.id == idInput);
-            if (patient) nameInput.value = patient.name;
+            const patient = patients.find(p => p.id == document.getElementById('input-patient-id').value.trim());
+            if (patient) document.getElementById('input-patient-name').value = patient.name;
         }
-
         function importExcel() {
             const file = document.getElementById('excel-file').files[0];
             if (!file) return alert("ファイルを選択してください。");
             const reader = new FileReader();
             reader.onload = (e) => {
-                const data = new Uint8Array(e.target.result);
-                const workbook = XLSX.read(data, {type: 'array'});
-                const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-                const jsonData = XLSX.utils.sheet_to_json(firstSheet, {header: 1});
-                
-                let addedCount = 0;
+                const workbook = XLSX.read(new Uint8Array(e.target.result), {type: 'array'});
+                const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], {header: 1});
+                let count = 0;
                 jsonData.forEach(row => {
                     if (row[0] && row[1]) {
                         const id = String(row[0]).trim();
-                        const name = String(row[1]).trim();
-                        if (!patients.find(p => p.id === id)) {
-                            patients.push({ id, name });
-                            addedCount++;
-                        }
+                        if (!patients.find(p => p.id === id)) { patients.push({ id, name: String(row[1]).trim() }); count++; }
                     }
                 });
-                savePatients();
-                alert(`${addedCount}件の患者データを新規追加しました。`);
-                renderMaster();
+                savePatients(); alert(`${count}件追加しました。`); renderMaster();
             };
             reader.readAsArrayBuffer(file);
         }
-
         function addManualPatient() {
             const id = document.getElementById('manual-patient-id').value.trim();
             const name = document.getElementById('manual-patient-name').value.trim();
-            if (!id || !name) return alert("IDと氏名を入力してください。");
-            if (patients.find(p => p.id === id)) return alert("このIDは既に登録されています。");
-            
-            patients.push({ id, name });
-            savePatients();
-            document.getElementById('manual-patient-id').value = '';
-            document.getElementById('manual-patient-name').value = '';
-            renderMaster();
+            if (!id || !name) return alert("入力してください。");
+            if (patients.find(p => p.id === id)) return alert("登録済みのIDです。");
+            patients.push({ id, name }); savePatients();
+            document.getElementById('manual-patient-id').value = ''; document.getElementById('manual-patient-name').value = ''; renderMaster();
         }
-
-        function deletePatient(id) {
-            if (confirm("この患者データを削除しますか？")) {
-                patients = patients.filter(p => p.id !== id);
-                savePatients();
-                renderMaster();
-            }
-        }
-
+        function deletePatient(id) { if (confirm("削除しますか？")) { patients = patients.filter(p => p.id !== id); savePatients(); renderMaster(); } }
         function renderMaster() {
-            const tbody = document.getElementById('master-table-body');
             document.getElementById('master-count').textContent = patients.length;
-            tbody.innerHTML = patients.map(p => `
-                <tr class="bg-white hover:bg-gray-50">
-                    <td class="px-4 py-2 border-b">${p.id}</td>
-                    <td class="px-4 py-2 border-b">${p.name}</td>
-                    <td class="px-4 py-2 border-b text-center">
-                        <button onclick="deletePatient('${p.id}')" class="text-red-500 hover:text-red-700"><i class="fa-solid fa-trash"></i></button>
-                    </td>
-                </tr>
-            `).join('');
+            document.getElementById('master-table-body').innerHTML = patients.map(p => `
+                <tr class="bg-white hover:bg-gray-50 border-b">
+                    <td class="px-4 py-2">${p.id}</td><td class="px-4 py-2">${p.name}</td>
+                    <td class="px-4 py-2 text-center"><button onclick="deletePatient('${p.id}')" class="text-red-500"><i class="fa-solid fa-trash"></i></button></td>
+                </tr>`).join('');
         }
+        function savePatients() { localStorage.setItem('dialysisPatients', JSON.stringify(patients)); updatePatientDatalist(); }
 
-        function savePatients() {
-            localStorage.setItem('dialysisPatients', JSON.stringify(patients));
-            updatePatientDatalist();
+        function updateReporterSelect() { document.getElementById('input-reporter').innerHTML = '<option value="">選択してください</option>' + ceStaff.map(s => `<option value="${s}">${s}</option>`).join(''); }
+        function renderStaffMaster() {
+            document.getElementById('staff-count').textContent = ceStaff.length;
+            document.getElementById('staff-table-body').innerHTML = ceStaff.map(s => `
+                <tr class="bg-white hover:bg-gray-50 border-b"><td class="px-4 py-2">${s}</td><td class="px-4 py-2 text-center"><button onclick="deleteStaff('${s}')" class="text-red-500"><i class="fa-solid fa-trash"></i></button></td></tr>`).join('');
         }
+        function addStaff() {
+            const name = document.getElementById('manual-staff-name').value.trim();
+            if (!name || ceStaff.includes(name)) return;
+            ceStaff.push(name); saveStaff(); document.getElementById('manual-staff-name').value = ''; renderStaffMaster();
+        }
+        function deleteStaff(name) { if (confirm(`削除しますか？`)) { ceStaff = ceStaff.filter(s => s !== name); saveStaff(); renderStaffMaster(); } }
+        function saveStaff() { localStorage.setItem('dialysisStaff', JSON.stringify(ceStaff)); updateReporterSelect(); }
 
-        // ================= WebRTC カメラ機能 =================
+        // ================= カメラ・画像処理 =================
         async function openCamera() {
-            const modal = document.getElementById('modal-camera');
-            const video = document.getElementById('camera-video');
-            modal.classList.remove('hidden');
-
-            // 1. 強制的に外カメラを指定（exact制約）
+            document.getElementById('modal-camera').classList.remove('hidden');
             let constraints = { video: { facingMode: { exact: "environment" } } };
-            
-            try {
-                cameraStream = await navigator.mediaDevices.getUserMedia(constraints);
-            } catch (err) {
-                console.warn("Exact environment camera failed, falling back to ideal environment...", err);
-                // 2. 失敗した場合は柔らかい制約で再試行
-                constraints = { video: { facingMode: "environment" } };
-                try {
-                    cameraStream = await navigator.mediaDevices.getUserMedia(constraints);
-                } catch (err2) {
-                    console.warn("Environment camera failed entirely, using any available camera...", err2);
-                    // 3. 全滅なら何でもいいからカメラを起動
-                    cameraStream = await navigator.mediaDevices.getUserMedia({ video: true });
-                }
+            try { cameraStream = await navigator.mediaDevices.getUserMedia(constraints); } 
+            catch {
+                try { cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } }); } 
+                catch { cameraStream = await navigator.mediaDevices.getUserMedia({ video: true }); }
             }
-            video.srcObject = cameraStream;
+            document.getElementById('camera-video').srcObject = cameraStream;
         }
 
         function closeCamera() {
-            const modal = document.getElementById('modal-camera');
-            modal.classList.add('hidden');
-            if (cameraStream) {
-                cameraStream.getTracks().forEach(track => track.stop());
-                cameraStream = null;
-            }
+            document.getElementById('modal-camera').classList.add('hidden');
+            if (cameraStream) { cameraStream.getTracks().forEach(t => t.stop()); cameraStream = null; }
         }
 
         function takePhoto() {
             const video = document.getElementById('camera-video');
             const canvas = document.getElementById('camera-canvas');
-            
-            // 縦横比を維持して最大800pxにリサイズ
-            let w = video.videoWidth;
-            let h = video.videoHeight;
+            let w = video.videoWidth; let h = video.videoHeight;
             const maxSize = 800;
-            if (w > h && w > maxSize) { h *= maxSize / w; w = maxSize; } 
-            else if (h > maxSize) { w *= maxSize / h; h = maxSize; }
-            
-            canvas.width = w;
-            canvas.height = h;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(video, 0, 0, w, h);
-            
-            const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
-            closeCamera();
-            
-            // 撮影直後に編集モーダルを開く
-            editingIndex = -1; // 新規
-            openDrawModal(dataUrl);
+            if (w > h && w > maxSize) { h = Math.round(h * (maxSize / w)); w = maxSize; } 
+            else if (h > maxSize) { w = Math.round(w * (maxSize / h)); h = maxSize; }
+            canvas.width = w; canvas.height = h;
+            canvas.getContext('2d').drawImage(video, 0, 0, w, h);
+            closeCamera(); editingIndex = -1; openDrawModal(canvas.toDataURL('image/jpeg', 0.8));
         }
 
-        // ファイルからの画像読み込み（リサイズ処理込み）
         function handleFileUpload(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            processImageFile(file, (dataUrl) => {
-                editingIndex = -1;
-                openDrawModal(dataUrl);
-                event.target.value = '';
-            });
-        }
-
-        function processImageFile(file, callback) {
+            if (!event.target.files[0]) return;
             const reader = new FileReader();
             reader.onload = (e) => {
                 const img = new Image();
@@ -563,368 +496,263 @@
                     const canvas = document.createElement('canvas');
                     let w = img.width; let h = img.height;
                     const max = 800;
-                    if (w > h && w > max) { h *= max / w; w = max; } 
-                    else if (h > max) { w *= max / h; h = max; }
+                    if (w > h && w > max) { h = Math.round(h * (max / w)); w = max; } 
+                    else if (h > max) { w = Math.round(w * (max / h)); h = max; }
                     canvas.width = w; canvas.height = h;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0, w, h);
-                    callback(canvas.toDataURL('image/jpeg', 0.8));
+                    canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                    editingIndex = -1; openDrawModal(canvas.toDataURL('image/jpeg', 0.8));
                 };
                 img.src = e.target.result;
             };
-            reader.readAsDataURL(file);
+            reader.readAsDataURL(event.target.files[0]);
+            event.target.value = '';
         }
 
-        // ================= 2層レイヤー お絵かき機能 =================
+        // ================= ビューワー（拡大表示） =================
+        function viewPhoto(src) {
+            document.getElementById('viewer-img').src = src;
+            document.getElementById('modal-viewer').classList.remove('hidden');
+        }
+        function closeViewer() {
+            document.getElementById('modal-viewer').classList.add('hidden');
+        }
+
+        // ================= お絵かき機能（潰れ修正版） =================
         function openDrawModal(imageSrc) {
             const modal = document.getElementById('modal-draw');
-            const baseCanvas = document.getElementById('base-canvas');
-            const drawCanvas = document.getElementById('draw-canvas');
-            const container = document.getElementById('layer-container');
-            const ctxBase = baseCanvas.getContext('2d');
-            const ctxDraw = drawCanvas.getContext('2d');
-
             modal.classList.remove('hidden');
-            setPen('red'); // 初期ペン
+            setPen('red');
 
-            const img = new Image();
-            img.onload = () => {
-                originalImageObj = img;
-                
-                // 画面サイズに収まるようにキャンバスサイズを計算
+            // 画面展開後に高さを正確に計算するため、50ミリ秒遅延させる
+            setTimeout(() => {
+                const baseCanvas = document.getElementById('base-canvas');
+                const drawCanvas = document.getElementById('draw-canvas');
+                const container = document.getElementById('layer-container');
                 const wrapper = document.getElementById('canvas-wrapper');
-                const maxW = wrapper.clientWidth - 20;
-                const maxH = wrapper.clientHeight - 20;
-                let w = img.width;
-                let h = img.height;
-                if (w > maxW) { h *= maxW / w; w = maxW; }
-                if (h > maxH) { w *= maxH / h; h = maxH; }
 
-                container.style.width = w + 'px';
-                container.style.height = h + 'px';
-                
-                baseCanvas.width = img.width;
-                baseCanvas.height = img.height;
-                drawCanvas.width = img.width;
-                drawCanvas.height = img.height;
+                const img = new Image();
+                img.onload = () => {
+                    originalImageObj = img;
+                    let drawW = img.width; let drawH = img.height;
+                    
+                    let maxW = wrapper.clientWidth - 10; 
+                    let maxH = wrapper.clientHeight - 10;
+                    
+                    // 万が一高さ取得が0になった場合の安全策（画面サイズから推測）
+                    if (maxH <= 10) maxH = window.innerHeight * 0.6;
+                    if (maxW <= 10) maxW = window.innerWidth * 0.8;
 
-                // 下敷きに写真を書き込み
-                ctxBase.drawImage(img, 0, 0);
-                // 透明フィルムをクリア
-                ctxDraw.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
-                
-                setupDrawingEvents(drawCanvas, ctxDraw);
-            };
-            img.src = imageSrc;
+                    const scale = Math.min(maxW / drawW, maxH / drawH, 1);
+                    
+                    container.style.width = Math.round(drawW * scale) + 'px';
+                    container.style.height = Math.round(drawH * scale) + 'px';
+                    
+                    baseCanvas.width = drawW; baseCanvas.height = drawH;
+                    drawCanvas.width = drawW; drawCanvas.height = drawH;
+
+                    baseCanvas.getContext('2d').drawImage(img, 0, 0, drawW, drawH);
+                    drawCanvas.getContext('2d').clearRect(0, 0, drawW, drawH);
+                    setupDrawingEvents(drawCanvas, drawCanvas.getContext('2d'));
+                };
+                img.src = imageSrc;
+            }, 50); // 50ms遅延処理
         }
 
-        function closeDrawModal() {
-            document.getElementById('modal-draw').classList.add('hidden');
-            originalImageObj = null;
-        }
+        function closeDrawModal() { document.getElementById('modal-draw').classList.add('hidden'); }
+        function setPen(color) { drawingTool = 'pen'; drawingColor = color; document.getElementById('btn-eraser').classList.remove('bg-gray-400', 'text-white'); }
+        function setEraser() { drawingTool = 'eraser'; document.getElementById('btn-eraser').classList.add('bg-gray-400', 'text-white'); }
+        function clearDraw() { const c = document.getElementById('draw-canvas'); c.getContext('2d').clearRect(0, 0, c.width, c.height); }
 
-        // ペン・消しゴムの設定
-        function setPen(color) {
-            drawingTool = 'pen';
-            drawingColor = color;
-            document.getElementById('btn-eraser').classList.remove('bg-gray-400', 'text-white');
-        }
-        function setEraser() {
-            drawingTool = 'eraser';
-            document.getElementById('btn-eraser').classList.add('bg-gray-400', 'text-white');
-        }
-
-        // 透明フィルム（お絵かき層）のリセット
-        function clearDraw() {
-            const drawCanvas = document.getElementById('draw-canvas');
-            const ctxDraw = drawCanvas.getContext('2d');
-            ctxDraw.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
-        }
-
-        // PointerEventsによる描画ロジック
         function setupDrawingEvents(canvas, ctx) {
-            // イベントの重複登録を防ぐため一度削除して再登録
-            canvas.onpointerdown = null;
-            canvas.onpointermove = null;
-            canvas.onpointerup = null;
-            canvas.onpointerout = null;
-
+            canvas.onpointerdown = null; canvas.onpointermove = null; canvas.onpointerup = null; canvas.onpointerout = null;
             let lastX = 0, lastY = 0;
-
             function getPos(e) {
                 const rect = canvas.getBoundingClientRect();
-                const scaleX = canvas.width / rect.width;
-                const scaleY = canvas.height / rect.height;
-                return {
-                    x: (e.clientX - rect.left) * scaleX,
-                    y: (e.clientY - rect.top) * scaleY
-                };
+                return { x: (e.clientX - rect.left) * (canvas.width / rect.width), y: (e.clientY - rect.top) * (canvas.height / rect.height) };
             }
-
-            canvas.onpointerdown = (e) => {
-                isDrawing = true;
-                const pos = getPos(e);
-                lastX = pos.x; lastY = pos.y;
-                canvas.setPointerCapture(e.pointerId);
-            };
-
+            canvas.onpointerdown = (e) => { isDrawing = true; const pos = getPos(e); lastX = pos.x; lastY = pos.y; canvas.setPointerCapture(e.pointerId); };
             canvas.onpointermove = (e) => {
                 if (!isDrawing) return;
-                const pos = getPos(e);
-                ctx.beginPath();
-                ctx.moveTo(lastX, lastY);
-                ctx.lineTo(pos.x, pos.y);
-                ctx.lineCap = 'round';
-                ctx.lineJoin = 'round';
-                
-                if (drawingTool === 'eraser') {
-                    // 消しゴム：透明フィルムのピクセルを透明にする（destination-out）
-                    ctx.globalCompositeOperation = 'destination-out';
-                    ctx.lineWidth = 20; // 消しゴムは太め
-                    ctx.strokeStyle = "rgba(0,0,0,1)"; 
-                } else {
-                    // ペン：通常描画
-                    ctx.globalCompositeOperation = 'source-over';
-                    ctx.lineWidth = 5;
-                    ctx.strokeStyle = drawingColor;
-                }
-                
-                ctx.stroke();
-                lastX = pos.x; lastY = pos.y;
+                e.preventDefault();
+                const pos = getPos(e); ctx.beginPath(); ctx.moveTo(lastX, lastY); ctx.lineTo(pos.x, pos.y); ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+                if (drawingTool === 'eraser') { ctx.globalCompositeOperation = 'destination-out'; ctx.lineWidth = 30; ctx.strokeStyle = "rgba(0,0,0,1)"; } 
+                else { ctx.globalCompositeOperation = 'source-over'; ctx.lineWidth = 6; ctx.strokeStyle = drawingColor; }
+                ctx.stroke(); lastX = pos.x; lastY = pos.y;
             };
-
-            const stopDraw = (e) => {
-                if (isDrawing) {
-                    isDrawing = false;
-                    canvas.releasePointerCapture(e.pointerId);
-                }
-            };
-            canvas.onpointerup = stopDraw;
-            canvas.onpointerout = stopDraw;
+            const stopDraw = (e) => { if (isDrawing) { isDrawing = false; canvas.releasePointerCapture(e.pointerId); } };
+            canvas.onpointerup = stopDraw; canvas.onpointerout = stopDraw;
         }
 
-        // 2つのレイヤーを合成して保存
         function saveDrawing() {
-            const baseCanvas = document.getElementById('base-canvas');
-            const drawCanvas = document.getElementById('draw-canvas');
-            
-            // 合成用の一時キャンバス
-            const tempCanvas = document.createElement('canvas');
-            tempCanvas.width = baseCanvas.width;
-            tempCanvas.height = baseCanvas.height;
-            const tCtx = tempCanvas.getContext('2d');
-            
-            // 1. 下敷きを描画
-            tCtx.drawImage(baseCanvas, 0, 0);
-            // 2. 透明フィルム（手書き）を上から重ねる
-            tCtx.drawImage(drawCanvas, 0, 0);
-            
-            const finalDataUrl = tempCanvas.toDataURL('image/jpeg', 0.8);
+            const tCanvas = document.createElement('canvas');
+            tCanvas.width = document.getElementById('base-canvas').width; tCanvas.height = document.getElementById('base-canvas').height;
+            const ctx = tCanvas.getContext('2d');
+            ctx.drawImage(document.getElementById('base-canvas'), 0, 0); ctx.drawImage(document.getElementById('draw-canvas'), 0, 0);
+            const finalData = tCanvas.toDataURL('image/jpeg', 0.8);
             
             if (editingIndex === -1) {
-                // 新規追加
                 if (currentEditingReportId) {
-                    // 履歴詳細画面からの追加
                     const r = reports.find(r => r.id === currentEditingReportId);
-                    if (r.photos.length < 3) {
-                        r.photos.push(finalDataUrl);
-                        localStorage.setItem('dialysisReports', JSON.stringify(reports));
-                        openDetailsModal(r.id); // 再描画
-                    } else {
-                        alert("写真は1件につき最大3枚までです。");
-                    }
+                    if (r.photos.length < 3) { r.photos.push(finalData); localStorage.setItem('dialysisReports', JSON.stringify(reports)); openDetailsModal(r.id); }
                 } else {
-                    // 新規報告画面での追加
-                    if (currentPhotos.length < 3) {
-                        currentPhotos.push(finalDataUrl);
-                        updatePhotoPreview();
-                    } else {
-                        alert("写真は最大3枚までです。");
-                    }
+                    if (currentPhotos.length < 3) { currentPhotos.push(finalData); updatePhotoPreview(); }
                 }
             } else {
-                // 既存写真の編集（上書き）
                 if (currentEditingReportId) {
-                    const r = reports.find(r => r.id === currentEditingReportId);
-                    r.photos[editingIndex] = finalDataUrl;
-                    localStorage.setItem('dialysisReports', JSON.stringify(reports));
-                    openDetailsModal(r.id);
+                    reports.find(r => r.id === currentEditingReportId).photos[editingIndex] = finalData;
+                    localStorage.setItem('dialysisReports', JSON.stringify(reports)); openDetailsModal(currentEditingReportId);
                 } else {
-                    currentPhotos[editingIndex] = finalDataUrl;
-                    updatePhotoPreview();
+                    currentPhotos[editingIndex] = finalData; updatePhotoPreview();
                 }
             }
-            
             closeDrawModal();
         }
 
-        // プレビュー表示
+        // ================= サムネイルの表示 (ビューワー対応) =================
         function updatePhotoPreview() {
-            const container = document.getElementById('photo-preview-container');
-            container.innerHTML = currentPhotos.map((src, idx) => `
-                <div class="relative border rounded aspect-square bg-black overflow-hidden group">
-                    <img src="${src}" class="w-full h-full object-cover cursor-pointer" onclick="editExistingPhoto(${idx}, false)">
-                    <button type="button" onclick="deletePhoto(${idx}, false)" class="absolute top-1 right-1 bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-80 hover:opacity-100"><i class="fa-solid fa-xmark text-xs"></i></button>
-                    <div class="absolute bottom-0 w-full bg-black/50 text-white text-[10px] text-center pointer-events-none hidden group-hover:block">タップで編集</div>
-                </div>
-            `).join('');
+            document.getElementById('photo-preview-container').innerHTML = currentPhotos.map((src, idx) => `
+                <div class="relative border rounded aspect-square bg-gray-900 overflow-hidden group">
+                    <img src="${src}" class="w-full h-full object-contain cursor-pointer" onclick="viewPhoto('${src}')" title="拡大表示">
+                    <button type="button" onclick="editExistingPhoto(${idx}, false)" class="absolute bottom-1 right-1 bg-blue-600 text-white rounded w-8 h-8 flex justify-center items-center opacity-90 shadow"><i class="fa-solid fa-pen text-sm"></i></button>
+                    <button type="button" onclick="deletePhoto(${idx}, false)" class="absolute top-1 right-1 bg-red-600 text-white rounded-full w-6 h-6 flex justify-center items-center opacity-90 shadow"><i class="fa-solid fa-xmark text-xs"></i></button>
+                </div>`).join('');
         }
 
-        // ================= レポート送信 =================
+        // ================= 報告・履歴管理 =================
         function submitReport(e) {
             e.preventDefault();
             const id = document.getElementById('input-patient-id').value;
             const name = document.getElementById('input-patient-name').value;
-            const shift = document.querySelector('input[name="shift"]:checked').value;
-            const cat = document.getElementById('input-category').value;
-            const details = document.getElementById('input-details').value;
-
-            const newReport = {
-                id: Date.now().toString(),
-                timestamp: new Date().toISOString(),
-                patientId: id,
-                patientName: name,
-                shift: shift,
-                category: cat,
-                details: details,
-                photos: [...currentPhotos],
-                status: '未対応',
-                resolution: '',
-                showOnBoard: true // 朝礼ボードに表示するフラグ
-            };
-
-            reports.unshift(newReport);
+            reports.unshift({
+                id: Date.now().toString(), timestamp: new Date().toISOString(),
+                patientId: id, patientName: name, reporter: document.getElementById('input-reporter').value,
+                shift: document.querySelector('input[name="shift"]:checked').value,
+                category: document.getElementById('input-category').value, details: document.getElementById('input-details').value,
+                photos: [...currentPhotos], status: '未対応', resolution: '', showOnBoard: true, confirmedBy: []
+            });
             localStorage.setItem('dialysisReports', JSON.stringify(reports));
-            
-            // 報告がない患者なら自動登録
-            if (!patients.find(p => p.id === id)) {
-                patients.push({id, name});
-                savePatients();
-            }
-
-            alert("報告を登録しました。");
-            clearForm();
-            switchTab('board'); // ボードに遷移
+            if (!patients.find(p => p.id === id)) { patients.push({id, name}); savePatients(); }
+            alert("登録しました。"); clearForm(); switchTab('board');
         }
 
-        function clearForm() {
-            document.getElementById('new-report-form').reset();
-            currentPhotos = [];
-            updatePhotoPreview();
-        }
+        function clearForm() { document.getElementById('new-report-form').reset(); currentPhotos = []; updatePhotoPreview(); }
 
-        // ================= 朝礼ボード =================
         function renderBoard() {
-            const filterShift = document.getElementById('board-shift-filter').value;
-            
-            let unresolvedHTML = '';
-            let resolvedHTML = '';
-            let unResCount = 0;
-            let resCount = 0;
-
+            const filter = document.getElementById('board-shift-filter').value;
+            let unHtml = '', resHtml = '', unCount = 0, resCount = 0;
             reports.forEach(r => {
-                if (!r.showOnBoard) return; // ピン外しされたものは非表示
-                if (filterShift !== 'all' && r.shift !== filterShift) return;
-
-                const dateStr = new Date(r.timestamp).toLocaleDateString('ja-JP', {month: 'numeric', day: 'numeric', hour:'2-digit', minute:'2-digit'});
-                const bgColors = r.status === '未対応' ? 'bg-white border-l-4 border-red-500' : 'bg-white border-l-4 border-green-500 opacity-90';
-                
+                if (!r.showOnBoard || (filter !== 'all' && r.shift !== filter)) return;
+                const d = new Date(r.timestamp);
+                const bg = r.status === '未対応' ? 'border-red-500' : 'border-green-500 opacity-90';
+                const confirms = r.confirmedBy ? r.confirmedBy.length : 0;
                 const card = `
-                    <div class="${bgColors} rounded shadow p-3 cursor-pointer hover:shadow-md transition" onclick="openDetailsModal('${r.id}')">
+                    <div class="bg-white border-l-4 ${bg} rounded shadow p-3 cursor-pointer hover:shadow-md transition" onclick="openDetailsModal('${r.id}')">
                         <div class="flex justify-between items-start mb-2">
-                            <span class="text-[10px] text-gray-500">${dateStr} (${r.shift})</span>
+                            <span class="text-[10px] text-gray-500">${d.getMonth()+1}/${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')} (${r.shift})</span>
                             <span class="text-xs px-2 py-1 bg-gray-200 rounded text-gray-700 font-bold">${r.category}</span>
                         </div>
-                        <div class="font-black text-2xl text-blue-900 mb-2 leading-tight tracking-wide">
-                            <span class="text-sm font-normal text-gray-500 block mb-1">ID: ${r.patientId}</span>
+                        <div class="font-black text-2xl text-blue-900 mb-2 leading-tight">
+                            <span class="text-sm font-normal text-gray-500 block mb-1">ID:${r.patientId} / 報告:${r.reporter||'未設定'}</span>
                             ${r.patientName} <span class="text-lg font-normal">様</span>
                         </div>
-                        <div class="text-base bg-gray-50 p-2 rounded border border-gray-200 text-gray-800 line-clamp-2">
-                            ${r.details}
+                        <div class="text-sm bg-gray-50 p-2 rounded border line-clamp-2">${r.details}</div>
+                        <div class="mt-2 flex justify-between items-center text-xs">
+                            ${r.photos.length > 0 ? `<span class="text-blue-600"><i class="fa-regular fa-image"></i> 写真${r.photos.length}枚</span>` : '<span></span>'}
+                            ${r.status === '対応済' ? `<span class="font-bold ${confirms === ceStaff.length ? 'text-green-600' : 'text-orange-500'}">確認: ${confirms}/${ceStaff.length}名</span>` : ''}
                         </div>
-                        ${r.photos.length > 0 ? `<div class="mt-2 text-xs text-blue-600"><i class="fa-regular fa-image"></i> 写真 ${r.photos.length}枚</div>` : ''}
-                    </div>
-                `;
-
-                if (r.status === '未対応') {
-                    unresolvedHTML += card;
-                    unResCount++;
-                } else {
-                    resolvedHTML += card;
-                    resCount++;
-                }
+                    </div>`;
+                r.status === '未対応' ? (unHtml += card, unCount++) : (resHtml += card, resCount++);
             });
-
-            document.getElementById('board-unresolved-list').innerHTML = unresolvedHTML || '<p class="text-gray-400 text-sm text-center py-4">該当なし</p>';
-            document.getElementById('board-resolved-list').innerHTML = resolvedHTML || '<p class="text-gray-400 text-sm text-center py-4">該当なし</p>';
-            document.getElementById('board-unresolved-count').textContent = `${unResCount}件`;
-            document.getElementById('board-resolved-count').textContent = `${resCount}件`;
+            document.getElementById('board-unresolved-list').innerHTML = unHtml || '<p class="text-center text-gray-400 py-4 text-sm">なし</p>';
+            document.getElementById('board-resolved-list').innerHTML = resHtml || '<p class="text-center text-gray-400 py-4 text-sm">なし</p>';
+            document.getElementById('board-unresolved-count').textContent = unCount + '件';
+            document.getElementById('board-resolved-count').textContent = resCount + '件';
         }
 
-        // ================= トラブル履歴＆詳細モーダル =================
         function renderHistory() {
-            const query = document.getElementById('history-search').value.toLowerCase();
-            const tbody = document.getElementById('history-table-body');
-            
-            tbody.innerHTML = reports.filter(r => 
-                r.patientName.toLowerCase().includes(query) || r.patientId.includes(query)
-            ).map(r => {
+            const q = document.getElementById('history-search').value.toLowerCase();
+            document.getElementById('history-table-body').innerHTML = reports.filter(r => r.patientName.toLowerCase().includes(q) || r.patientId.includes(q))
+            .map(r => {
                 const d = new Date(r.timestamp);
-                const dateStr = `${d.getMonth()+1}/${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}`;
-                const statusClass = r.status === '未対応' ? 'bg-red-100 text-red-800 font-bold' : 'bg-green-100 text-green-800';
                 return `
                 <tr class="bg-white hover:bg-gray-50 border-b cursor-pointer" onclick="openDetailsModal('${r.id}')">
-                    <td class="px-4 py-3 whitespace-nowrap">${dateStr}</td>
-                    <td class="px-4 py-3 font-bold">${r.patientId} / ${r.patientName}</td>
-                    <td class="px-4 py-3">${r.shift}</td>
-                    <td class="px-4 py-3"><span class="bg-gray-200 px-2 py-1 rounded text-xs">${r.category}</span></td>
-                    <td class="px-4 py-3"><span class="px-2 py-1 rounded text-xs ${statusClass}">${r.status}</span></td>
+                    <td class="px-4 py-3 whitespace-nowrap">${d.getMonth()+1}/${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}</td>
+                    <td class="px-4 py-3 font-bold">${r.patientId}/${r.patientName}</td>
+                    <td class="px-4 py-3">${r.reporter||'-'}</td>
+                    <td class="px-4 py-3 text-xs"><span class="bg-gray-200 px-2 py-1 rounded">${r.category}</span></td>
+                    <td class="px-4 py-3 text-xs"><span class="px-2 py-1 rounded font-bold ${r.status==='未対応'?'bg-red-100 text-red-800':'bg-green-100 text-green-800'}">${r.status}</span></td>
                     <td class="px-4 py-3"><button class="text-blue-600 hover:underline text-xs">詳細</button></td>
                 </tr>`;
             }).join('');
         }
 
+        // ================= モーダル詳細・朝礼確認ロジック =================
         function openDetailsModal(id) {
             const r = reports.find(x => x.id === id);
             if (!r) return;
             currentEditingReportId = id;
+            if (!r.confirmedBy) r.confirmedBy = [];
 
             const d = new Date(r.timestamp);
             document.getElementById('detail-date').textContent = `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}`;
             document.getElementById('detail-patient').textContent = `${r.patientId} - ${r.patientName} 様`;
+            document.getElementById('detail-reporter').textContent = r.reporter || '未設定';
             document.getElementById('detail-category').textContent = r.category;
             document.getElementById('detail-shift').textContent = r.shift;
             document.getElementById('detail-text').textContent = r.details;
-            
             document.getElementById('detail-status').value = r.status;
             document.getElementById('detail-resolution').value = r.resolution || '';
 
-            // 朝礼ボードから外すボタンの制御
-            const btnRemove = document.getElementById('btn-remove-board');
-            if (r.showOnBoard && r.status === '対応済') {
-                btnRemove.classList.remove('hidden');
-            } else {
-                btnRemove.classList.add('hidden');
-            }
+            // 履歴詳細画面でのサムネイル（ビューワー対応）
+            document.getElementById('detail-photos').innerHTML = r.photos.map((src, idx) => `
+                <div class="relative border rounded aspect-square bg-gray-900 overflow-hidden group">
+                    <img src="${src}" class="w-full h-full object-contain cursor-pointer" onclick="viewPhoto('${src}')" title="拡大表示">
+                    <button type="button" onclick="editExistingPhoto(${idx}, true)" class="absolute bottom-1 right-1 bg-blue-600 text-white rounded w-8 h-8 flex justify-center items-center opacity-90 shadow"><i class="fa-solid fa-pen text-sm"></i></button>
+                    <button type="button" onclick="deletePhoto(${idx}, true)" class="absolute top-1 right-1 bg-red-600 text-white rounded-full w-6 h-6 flex justify-center items-center opacity-90 shadow"><i class="fa-solid fa-xmark text-xs"></i></button>
+                </div>`).join('');
 
-            renderDetailPhotos(r);
             document.getElementById('modal-details').classList.remove('hidden');
+            toggleChecklistUI(r);
         }
 
-        function renderDetailPhotos(r) {
-            const container = document.getElementById('detail-photos');
-            container.innerHTML = r.photos.map((src, idx) => `
-                <div class="relative border rounded aspect-square bg-black overflow-hidden group">
-                    <img src="${src}" class="w-full h-full object-cover cursor-pointer" onclick="editExistingPhoto(${idx}, true)">
-                    <button type="button" onclick="deletePhoto(${idx}, true)" class="absolute top-1 right-1 bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-80 hover:opacity-100"><i class="fa-solid fa-xmark text-xs"></i></button>
-                    <div class="absolute bottom-0 w-full bg-black/50 text-white text-[10px] text-center pointer-events-none hidden group-hover:block">タップで編集</div>
-                </div>
-            `).join('');
+        function toggleChecklistUI(r = reports.find(x => x.id === currentEditingReportId)) {
+            const status = document.getElementById('detail-status').value;
+            const section = document.getElementById('confirmation-section');
+            const container = document.getElementById('staff-checklist');
+            const btnRemove = document.getElementById('btn-remove-board');
+
+            if (status !== '対応済' || !r.showOnBoard) {
+                section.classList.add('hidden'); btnRemove.classList.add('hidden'); return;
+            }
+            
+            section.classList.remove('hidden'); btnRemove.classList.remove('hidden');
+
+            container.innerHTML = ceStaff.map(staff => {
+                const checked = r.confirmedBy.includes(staff);
+                return `
+                <label class="flex items-center space-x-2 p-2 border rounded cursor-pointer transition-colors ${checked ? 'bg-green-100 border-green-500' : 'bg-white hover:bg-gray-100'}">
+                    <input type="checkbox" class="w-4 h-4" ${checked ? 'checked' : ''} onchange="toggleConfirm('${staff}')">
+                    <span class="${checked ? 'text-green-800 font-bold' : 'text-gray-700'}">${staff}</span>
+                </label>`;
+            }).join('');
+
+            const allChecked = ceStaff.length > 0 && ceStaff.every(s => r.confirmedBy.includes(s));
+            if (allChecked) {
+                btnRemove.disabled = false;
+                btnRemove.classList.replace('border-gray-400', 'border-red-500');
+                btnRemove.classList.replace('text-gray-700', 'text-white');
+                btnRemove.classList.add('bg-red-500', 'hover:bg-red-600');
+            } else {
+                btnRemove.disabled = true;
+                btnRemove.className = "px-3 py-2 border border-gray-300 text-gray-400 rounded bg-gray-100 text-xs md:text-sm font-bold shadow-sm transition-all duration-300 cursor-not-allowed";
+            }
         }
 
-        function closeDetailsModal() {
-            document.getElementById('modal-details').classList.add('hidden');
-            currentEditingReportId = null;
+        function toggleConfirm(staffName) {
+            const r = reports.find(x => x.id === currentEditingReportId);
+            if (r.confirmedBy.includes(staffName)) r.confirmedBy = r.confirmedBy.filter(s => s !== staffName);
+            else r.confirmedBy.push(staffName);
+            localStorage.setItem('dialysisReports', JSON.stringify(reports)); toggleChecklistUI(r); 
         }
 
         function saveDetails() {
@@ -932,88 +760,41 @@
             const r = reports.find(x => x.id === currentEditingReportId);
             r.status = document.getElementById('detail-status').value;
             r.resolution = document.getElementById('detail-resolution').value;
-            
-            // 未対応に戻した場合は強制的にボードに表示させる
             if (r.status === '未対応') r.showOnBoard = true;
-
             localStorage.setItem('dialysisReports', JSON.stringify(reports));
-            closeDetailsModal();
-            renderHistory();
-            renderBoard(); // ボードも更新
+            closeDetailsModal(); renderHistory(); renderBoard();
         }
 
         function removeReportFromBoard() {
-            if (!currentEditingReportId) return;
             const r = reports.find(x => x.id === currentEditingReportId);
-            if(confirm('この項目を朝礼ボードの表示から外しますか？（履歴には残ります）')) {
-                r.showOnBoard = false;
-                localStorage.setItem('dialysisReports', JSON.stringify(reports));
-                closeDetailsModal();
-                renderBoard();
+            if(confirm('全員の確認が完了しました。朝礼ボードから外しますか？')) {
+                r.showOnBoard = false; localStorage.setItem('dialysisReports', JSON.stringify(reports)); closeDetailsModal(); renderBoard();
             }
         }
 
         function deleteReport() {
-            if (!currentEditingReportId) return;
-            if (confirm("本当にこの報告データを完全に削除しますか？\n（※この操作は取り消せません）")) {
+            if (confirm("本当に完全に削除しますか？")) {
                 reports = reports.filter(r => r.id !== currentEditingReportId);
-                localStorage.setItem('dialysisReports', JSON.stringify(reports));
-                closeDetailsModal();
-                renderHistory();
-                renderBoard();
+                localStorage.setItem('dialysisReports', JSON.stringify(reports)); closeDetailsModal(); renderHistory(); renderBoard();
             }
         }
 
-        // 詳細画面からの写真追加・削除処理
-        function addPhotoToExisting(isCamera, event = null) {
-            const r = reports.find(x => x.id === currentEditingReportId);
-            if (r.photos.length >= 3) return alert("写真は最大3枚までです。");
-            
-            if (isCamera) {
-                openCamera();
-            } else if (event && event.target.files[0]) {
-                processImageFile(event.target.files[0], (dataUrl) => {
-                    editingIndex = -1;
-                    openDrawModal(dataUrl);
-                    event.target.value = '';
-                });
-            }
-        }
+        function closeDetailsModal() { document.getElementById('modal-details').classList.add('hidden'); }
 
-        function deletePhoto(index, isFromDetails) {
-            if(!confirm("この写真を削除しますか？")) return;
-            if (isFromDetails) {
+        function addPhotoToExisting(isCamera, e=null) {
+            if (reports.find(x => x.id === currentEditingReportId).photos.length >= 3) return alert("最大3枚までです。");
+            if (isCamera) openCamera();
+            else if (e && e.target.files[0]) handleFileUpload(e);
+        }
+        function deletePhoto(idx, isDetails) {
+            if(!confirm("削除しますか？")) return;
+            if (isDetails) {
                 const r = reports.find(x => x.id === currentEditingReportId);
-                r.photos.splice(index, 1);
-                localStorage.setItem('dialysisReports', JSON.stringify(reports));
-                renderDetailPhotos(r);
-            } else {
-                currentPhotos.splice(index, 1);
-                updatePhotoPreview();
-            }
+                r.photos.splice(idx, 1); localStorage.setItem('dialysisReports', JSON.stringify(reports)); openDetailsModal(currentEditingReportId);
+            } else { currentPhotos.splice(idx, 1); updatePhotoPreview(); }
         }
-
-        function editExistingPhoto(index, isFromDetails) {
-            editingIndex = index;
-            if (isFromDetails) {
-                const r = reports.find(x => x.id === currentEditingReportId);
-                openDrawModal(r.photos[index]);
-            } else {
-                openDrawModal(currentPhotos[index]);
-            }
-        }
-
-        // PWA Service Worker 登録
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js')
-                .then(registration => {
-                    console.log('ServiceWorker registration successful:', registration.scope);
-                })
-                .catch(error => {
-                    console.log('ServiceWorker registration failed:', error);
-                });
-            });
+        function editExistingPhoto(idx, isDetails) {
+            editingIndex = idx; openDrawModal(isDetails ? reports.find(x => x.id === currentEditingReportId).photos[idx] : currentPhotos[idx]);
         }
     </script>
 </body>

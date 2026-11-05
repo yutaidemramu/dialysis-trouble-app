@@ -18,7 +18,7 @@
 
     <style>
         /* カスタムスクロールバー */
-        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
         ::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #a8a8a8; }
@@ -29,13 +29,14 @@
 </head>
 <body class="bg-gray-100 h-screen flex overflow-hidden font-sans text-gray-800">
 
-    <!-- サイドバー -->
-    <aside class="w-64 bg-blue-900 text-white flex flex-col shadow-lg z-10 hidden md:flex">
+    <!-- サイドバー (PC用) -->
+    <aside class="w-64 bg-blue-900 text-white flex flex-col shadow-lg z-10 hidden md:flex shrink-0">
         <div class="p-6 text-center border-b border-blue-800">
             <h1 class="text-xl font-bold tracking-wider"><i class="fa-solid fa-hospital-user mr-2"></i>透析トラブル共有</h1>
         </div>
-        <nav class="flex-1 p-4 space-y-2">
+        <nav class="flex-1 p-4 space-y-2 overflow-y-auto">
             <button onclick="switchTab('board')" id="tab-board" class="w-full flex items-center p-3 rounded-lg hover:bg-blue-800 transition-colors bg-blue-800"><i class="fa-solid fa-chalkboard-user w-6"></i> 朝礼ボード</button>
+            <button onclick="switchTab('manager')" id="tab-manager" class="w-full flex items-center p-3 rounded-lg hover:bg-blue-800 transition-colors"><i class="fa-solid fa-user-tie w-6"></i> 管理者連絡</button>
             <button onclick="switchTab('new')" id="tab-new" class="w-full flex items-center p-3 rounded-lg hover:bg-blue-800 transition-colors"><i class="fa-solid fa-pen-to-square w-6"></i> 新規報告</button>
             <button onclick="switchTab('history')" id="tab-history" class="w-full flex items-center p-3 rounded-lg hover:bg-blue-800 transition-colors"><i class="fa-solid fa-table-list w-6"></i> トラブル履歴</button>
             <button onclick="switchTab('master')" id="tab-master" class="w-full flex items-center p-3 rounded-lg hover:bg-blue-800 transition-colors"><i class="fa-solid fa-users-gear w-6"></i> マスター管理</button>
@@ -43,19 +44,20 @@
     </aside>
 
     <!-- モバイル用下部ナビゲーション -->
-    <div class="md:hidden fixed bottom-0 left-0 w-full bg-blue-900 text-white flex justify-around p-2 z-50 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
-        <button onclick="switchTab('board')" class="flex flex-col items-center p-2"><i class="fa-solid fa-chalkboard-user text-xl mb-1"></i><span class="text-[10px]">朝礼ボード</span></button>
-        <button onclick="switchTab('new')" class="flex flex-col items-center p-2"><i class="fa-solid fa-pen-to-square text-xl mb-1"></i><span class="text-[10px]">新規報告</span></button>
-        <button onclick="switchTab('history')" class="flex flex-col items-center p-2"><i class="fa-solid fa-table-list text-xl mb-1"></i><span class="text-[10px]">履歴</span></button>
-        <button onclick="switchTab('master')" class="flex flex-col items-center p-2"><i class="fa-solid fa-users-gear text-xl mb-1"></i><span class="text-[10px]">マスター</span></button>
+    <div class="md:hidden fixed bottom-0 left-0 w-full bg-blue-900 text-white flex justify-between px-1 py-2 z-50 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
+        <button onclick="switchTab('board')" id="tab-mob-board" class="flex-1 flex flex-col items-center p-1 rounded hover:bg-blue-800"><i class="fa-solid fa-chalkboard-user text-lg mb-1"></i><span class="text-[9px]">朝礼</span></button>
+        <button onclick="switchTab('manager')" id="tab-mob-manager" class="flex-1 flex flex-col items-center p-1 rounded hover:bg-blue-800"><i class="fa-solid fa-user-tie text-lg mb-1"></i><span class="text-[9px]">管理者</span></button>
+        <button onclick="switchTab('new')" id="tab-mob-new" class="flex-1 flex flex-col items-center p-1 rounded hover:bg-blue-800"><i class="fa-solid fa-pen-to-square text-lg mb-1"></i><span class="text-[9px]">報告</span></button>
+        <button onclick="switchTab('history')" id="tab-mob-history" class="flex-1 flex flex-col items-center p-1 rounded hover:bg-blue-800"><i class="fa-solid fa-table-list text-lg mb-1"></i><span class="text-[9px]">履歴</span></button>
+        <button onclick="switchTab('master')" id="tab-mob-master" class="flex-1 flex flex-col items-center p-1 rounded hover:bg-blue-800"><i class="fa-solid fa-users-gear text-lg mb-1"></i><span class="text-[9px]">設定</span></button>
     </div>
 
     <!-- メインコンテンツ -->
-    <main class="flex-1 overflow-hidden flex flex-col relative pb-16 md:pb-0">
+    <main class="flex-1 overflow-hidden flex flex-col relative pb-[60px] md:pb-0 bg-gray-100">
         
         <!-- ==================== 朝礼ボード画面 ==================== -->
-        <div id="screen-board" class="h-full flex flex-col p-2 md:p-4">
-            <div class="flex flex-wrap items-center justify-between bg-white p-2 rounded shadow mb-2 text-sm">
+        <div id="screen-board" class="h-full flex flex-col p-2 md:p-4 gap-2 overflow-hidden">
+            <div class="flex flex-wrap items-center justify-between bg-white p-2 rounded shadow text-sm shrink-0">
                 <h2 class="font-bold text-blue-900 mr-4"><i class="fa-solid fa-chalkboard-user mr-1"></i>朝礼ボード</h2>
                 <div class="flex space-x-2">
                     <select id="board-shift-filter" class="border rounded px-2 py-1 text-xs" onchange="renderBoard()">
@@ -66,20 +68,41 @@
                 </div>
             </div>
 
-            <div class="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-4 min-h-0">
-                <div class="bg-red-50 rounded-lg shadow border-t-4 border-red-500 flex flex-col">
-                    <div class="p-2 bg-red-100 text-red-800 font-bold flex justify-between items-center text-sm">
+            <!-- 患者トラブルボード (フレックスで画面いっぱいまで伸び、はみ出たら内側がスクロール) -->
+            <div class="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-3 min-h-0 overflow-hidden">
+                
+                <!-- 未対応リスト -->
+                <div class="bg-red-50 rounded-lg shadow border-t-4 border-red-500 flex flex-col h-full overflow-hidden">
+                    <div class="p-2 bg-red-100 text-red-800 font-bold flex justify-between items-center text-sm shrink-0">
                         <span>未対応 / 要対応アクション</span>
                         <span id="board-unresolved-count" class="bg-red-500 text-white rounded-full px-2 py-0.5 text-xs">0件</span>
                     </div>
-                    <div id="board-unresolved-list" class="p-2 overflow-y-auto max-h-[65vh] space-y-3"></div>
+                    <!-- ここがスクロール領域 -->
+                    <div id="board-unresolved-list" class="p-2 overflow-y-auto flex-1 space-y-2"></div>
                 </div>
-                <div class="bg-green-50 rounded-lg shadow border-t-4 border-green-500 flex flex-col">
-                    <div class="p-2 bg-green-100 text-green-800 font-bold flex justify-between items-center text-sm">
+                
+                <!-- 対応済リスト -->
+                <div class="bg-green-50 rounded-lg shadow border-t-4 border-green-500 flex flex-col h-full overflow-hidden">
+                    <div class="p-2 bg-green-100 text-green-800 font-bold flex justify-between items-center text-sm shrink-0">
                         <span>対応済 (共有事項)</span>
                         <span id="board-resolved-count" class="bg-green-500 text-white rounded-full px-2 py-0.5 text-xs">0件</span>
                     </div>
-                    <div id="board-resolved-list" class="p-2 overflow-y-auto max-h-[65vh] space-y-3"></div>
+                    <!-- ここがスクロール領域 -->
+                    <div id="board-resolved-list" class="p-2 overflow-y-auto flex-1 space-y-2"></div>
+                </div>
+                
+            </div>
+        </div>
+
+        <!-- ==================== 管理者連絡画面 (新設独立画面) ==================== -->
+        <div id="screen-manager" class="hidden h-full flex flex-col p-2 md:p-4 overflow-hidden">
+            <div class="bg-blue-50 rounded-lg shadow-md border-t-4 border-blue-600 flex flex-col h-full overflow-hidden">
+                <div class="p-4 bg-blue-100 text-blue-900 font-bold flex justify-between items-center shrink-0">
+                    <h2 class="text-lg"><i class="fa-solid fa-user-tie mr-2"></i> 管理者からの連絡・指示ボード</h2>
+                    <button onclick="openManagerModal()" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-sm shadow-sm font-bold"><i class="fa-solid fa-plus mr-1"></i>新規連絡を追加</button>
+                </div>
+                <div id="board-manager-list" class="p-4 overflow-y-auto flex-1 space-y-4">
+                    <!-- JSで描画 -->
                 </div>
             </div>
         </div>
@@ -251,10 +274,30 @@
         <canvas id="camera-canvas" class="hidden"></canvas>
     </div>
 
-    <!-- ==================== 写真拡大ビューワー（新機能） ==================== -->
+    <!-- ==================== 写真拡大ビューワー ==================== -->
     <div id="modal-viewer" class="fixed inset-0 bg-black/90 z-[110] hidden flex flex-col items-center justify-center">
         <button onclick="closeViewer()" class="absolute top-4 right-4 text-white bg-white/20 hover:bg-white/40 rounded-full w-12 h-12 flex items-center justify-center text-2xl z-10"><i class="fa-solid fa-xmark"></i></button>
         <img id="viewer-img" src="" class="max-w-full max-h-full object-contain p-2">
+    </div>
+
+    <!-- ==================== 管理者報告入力モーダル ==================== -->
+    <div id="modal-manager" class="fixed inset-0 bg-black/60 z-[120] hidden flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-lg rounded-xl shadow-2xl flex flex-col">
+            <div class="p-4 border-b bg-blue-900 text-white rounded-t-xl flex justify-between items-center">
+                <h3 class="font-bold text-lg"><i class="fa-solid fa-pen-to-square mr-2"></i>管理者連絡の入力</h3>
+                <button onclick="closeManagerModal()" class="hover:text-gray-300"><i class="fa-solid fa-xmark text-xl"></i></button>
+            </div>
+            <div class="p-5 flex flex-col gap-4">
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-2">連絡・指示内容 <span class="text-red-500">*</span></label>
+                    <textarea id="manager-msg" rows="6" class="w-full p-3 border rounded focus:ring-2 focus:ring-blue-500" placeholder="本日の共有事項や、不在時の指示などを入力してください..."></textarea>
+                </div>
+            </div>
+            <div class="p-4 border-t bg-gray-100 flex justify-end space-x-3 rounded-b-xl">
+                <button onclick="closeManagerModal()" class="px-4 py-2 bg-white border rounded hover:bg-gray-50 text-sm">キャンセル</button>
+                <button onclick="saveManagerReport()" class="px-6 py-2 bg-blue-600 text-white rounded font-bold hover:bg-blue-700 text-sm shadow">保存して掲示</button>
+            </div>
+        </div>
     </div>
 
     <!-- ==================== お絵かき・編集モーダル ==================== -->
@@ -265,7 +308,7 @@
                 <button onclick="closeDrawModal()" class="text-gray-500 hover:text-black"><i class="fa-solid fa-xmark text-xl"></i></button>
             </div>
             
-            <div class="p-2 flex justify-center space-x-2 bg-gray-50 border-b">
+            <div class="p-2 flex justify-center space-x-2 bg-gray-50 border-b shrink-0">
                 <button onclick="setPen('red')" class="w-10 h-10 rounded-full bg-red-500 border-2 border-white shadow ring-2 ring-transparent focus:ring-blue-500"></button>
                 <button onclick="setPen('blue')" class="w-10 h-10 rounded-full bg-blue-500 border-2 border-white shadow ring-2 ring-transparent focus:ring-blue-500"></button>
                 <button onclick="setPen('black')" class="w-10 h-10 rounded-full bg-black border-2 border-white shadow ring-2 ring-transparent focus:ring-blue-500"></button>
@@ -281,7 +324,7 @@
                 </div>
             </div>
 
-            <div class="p-3 border-t bg-gray-100 flex justify-end space-x-3">
+            <div class="p-3 border-t bg-gray-100 flex justify-end space-x-3 shrink-0">
                 <button onclick="closeDrawModal()" class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">キャンセル</button>
                 <button onclick="saveDrawing()" class="px-6 py-2 bg-blue-600 text-white rounded font-bold hover:bg-blue-700">保存して添付</button>
             </div>
@@ -291,7 +334,7 @@
     <!-- ==================== 履歴詳細・対応入力モーダル ==================== -->
     <div id="modal-details" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-2 md:p-4">
         <div class="bg-white w-full max-w-4xl rounded-xl shadow-2xl flex flex-col max-h-[95vh] md:max-h-[90vh]">
-            <div class="p-4 border-b flex justify-between items-center bg-blue-900 text-white rounded-t-xl">
+            <div class="p-4 border-b flex justify-between items-center bg-blue-900 text-white rounded-t-xl shrink-0">
                 <h3 class="text-xl font-bold">トラブル詳細・対応記録</h3>
                 <button onclick="closeDetailsModal()" class="hover:text-gray-300"><i class="fa-solid fa-xmark text-2xl"></i></button>
             </div>
@@ -348,7 +391,7 @@
             </div>
 
             <!-- フッター -->
-            <div class="p-3 md:p-4 border-t bg-gray-100 flex justify-between items-center">
+            <div class="p-3 md:p-4 border-t bg-gray-100 flex justify-between items-center shrink-0">
                 <button onclick="deleteReport()" class="px-3 py-2 text-red-600 bg-white border border-red-300 rounded hover:bg-red-50 text-xs md:text-sm font-semibold"><i class="fa-solid fa-trash md:mr-1"></i><span class="hidden md:inline">削除</span></button>
                 <div class="flex space-x-2">
                     <button onclick="removeReportFromBoard()" id="btn-remove-board" class="px-3 py-2 border border-gray-400 text-gray-700 rounded bg-white text-xs md:text-sm font-bold shadow-sm transition-all duration-300 hidden" disabled><i class="fa-solid fa-thumbtack-slash mr-1"></i>ボード解除</button>
@@ -364,8 +407,11 @@
         // ================= アプリケーション状態 =================
         let patients = JSON.parse(localStorage.getItem('dialysisPatients')) || [];
         let reports = JSON.parse(localStorage.getItem('dialysisReports')) || [];
+        let managerReports = JSON.parse(localStorage.getItem('dialysisManagerReports')) || [];
+        
         let currentPhotos = [];
         let currentEditingReportId = null; 
+        let editingManagerId = null; 
         
         const defaultStaff = ["恩田", "杉本", "森", "石井", "塩澤", "鈴木", "國吉", "西山", "菅澤", "村戸", "長谷川", "和田", "伊丹", "菅原", "黒坂", "村田"];
         let ceStaff = JSON.parse(localStorage.getItem('dialysisStaff'));
@@ -391,13 +437,18 @@
         };
 
         function switchTab(tabId) {
-            ['board', 'new', 'history', 'master'].forEach(id => {
+            // 全画面非表示＆タブ色リセット
+            ['board', 'manager', 'new', 'history', 'master'].forEach(id => {
                 document.getElementById(`screen-${id}`).classList.add('hidden');
                 document.getElementById(`tab-${id}`)?.classList.remove('bg-blue-800');
             });
+            // 対象画面表示＆タブ色変更
             document.getElementById(`screen-${tabId}`).classList.remove('hidden');
             document.getElementById(`tab-${tabId}`)?.classList.add('bg-blue-800');
+            
+            // 画面ごとの描画実行
             if (tabId === 'board') renderBoard();
+            if (tabId === 'manager') renderManagerReports();
             if (tabId === 'history') renderHistory();
         }
 
@@ -513,17 +564,14 @@
             document.getElementById('viewer-img').src = src;
             document.getElementById('modal-viewer').classList.remove('hidden');
         }
-        function closeViewer() {
-            document.getElementById('modal-viewer').classList.add('hidden');
-        }
+        function closeViewer() { document.getElementById('modal-viewer').classList.add('hidden'); }
 
-        // ================= お絵かき機能（潰れ修正版） =================
+        // ================= お絵かき機能 =================
         function openDrawModal(imageSrc) {
             const modal = document.getElementById('modal-draw');
             modal.classList.remove('hidden');
             setPen('red');
 
-            // 画面展開後に高さを正確に計算するため、50ミリ秒遅延させる
             setTimeout(() => {
                 const baseCanvas = document.getElementById('base-canvas');
                 const drawCanvas = document.getElementById('draw-canvas');
@@ -534,11 +582,8 @@
                 img.onload = () => {
                     originalImageObj = img;
                     let drawW = img.width; let drawH = img.height;
+                    let maxW = wrapper.clientWidth - 10; let maxH = wrapper.clientHeight - 10;
                     
-                    let maxW = wrapper.clientWidth - 10; 
-                    let maxH = wrapper.clientHeight - 10;
-                    
-                    // 万が一高さ取得が0になった場合の安全策（画面サイズから推測）
                     if (maxH <= 10) maxH = window.innerHeight * 0.6;
                     if (maxW <= 10) maxW = window.innerWidth * 0.8;
 
@@ -555,7 +600,7 @@
                     setupDrawingEvents(drawCanvas, drawCanvas.getContext('2d'));
                 };
                 img.src = imageSrc;
-            }, 50); // 50ms遅延処理
+            }, 50);
         }
 
         function closeDrawModal() { document.getElementById('modal-draw').classList.add('hidden'); }
@@ -608,7 +653,6 @@
             closeDrawModal();
         }
 
-        // ================= サムネイルの表示 (ビューワー対応) =================
         function updatePhotoPreview() {
             document.getElementById('photo-preview-container').innerHTML = currentPhotos.map((src, idx) => `
                 <div class="relative border rounded aspect-square bg-gray-900 overflow-hidden group">
@@ -640,23 +684,26 @@
         function renderBoard() {
             const filter = document.getElementById('board-shift-filter').value;
             let unHtml = '', resHtml = '', unCount = 0, resCount = 0;
+            
+            // 多人数対応のためのコンパクトなカードレイアウト
             reports.forEach(r => {
                 if (!r.showOnBoard || (filter !== 'all' && r.shift !== filter)) return;
                 const d = new Date(r.timestamp);
                 const bg = r.status === '未対応' ? 'border-red-500' : 'border-green-500 opacity-90';
                 const confirms = r.confirmedBy ? r.confirmedBy.length : 0;
+                
                 const card = `
-                    <div class="bg-white border-l-4 ${bg} rounded shadow p-3 cursor-pointer hover:shadow-md transition" onclick="openDetailsModal('${r.id}')">
-                        <div class="flex justify-between items-start mb-2">
+                    <div class="bg-white border-l-4 ${bg} rounded shadow-sm p-2 cursor-pointer hover:shadow-md transition" onclick="openDetailsModal('${r.id}')">
+                        <div class="flex justify-between items-start mb-1">
                             <span class="text-[10px] text-gray-500">${d.getMonth()+1}/${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')} (${r.shift})</span>
-                            <span class="text-xs px-2 py-1 bg-gray-200 rounded text-gray-700 font-bold">${r.category}</span>
+                            <span class="text-[10px] px-1.5 py-0.5 bg-gray-200 rounded text-gray-700 font-bold">${r.category}</span>
                         </div>
-                        <div class="font-black text-2xl text-blue-900 mb-2 leading-tight">
-                            <span class="text-sm font-normal text-gray-500 block mb-1">ID:${r.patientId} / 報告:${r.reporter||'未設定'}</span>
-                            ${r.patientName} <span class="text-lg font-normal">様</span>
+                        <div class="font-black text-xl text-blue-900 mb-1 leading-tight tracking-wide">
+                            <span class="text-xs font-normal text-gray-500 block mb-0.5">ID:${r.patientId} / 報告:${r.reporter||'未設定'}</span>
+                            ${r.patientName} <span class="text-base font-normal">様</span>
                         </div>
-                        <div class="text-sm bg-gray-50 p-2 rounded border line-clamp-2">${r.details}</div>
-                        <div class="mt-2 flex justify-between items-center text-xs">
+                        <div class="text-xs bg-gray-50 p-1.5 rounded border border-gray-100 text-gray-700 line-clamp-2">${r.details}</div>
+                        <div class="mt-1 flex justify-between items-center text-[10px]">
                             ${r.photos.length > 0 ? `<span class="text-blue-600"><i class="fa-regular fa-image"></i> 写真${r.photos.length}枚</span>` : '<span></span>'}
                             ${r.status === '対応済' ? `<span class="font-bold ${confirms === ceStaff.length ? 'text-green-600' : 'text-orange-500'}">確認: ${confirms}/${ceStaff.length}名</span>` : ''}
                         </div>
@@ -669,6 +716,64 @@
             document.getElementById('board-resolved-count').textContent = resCount + '件';
         }
 
+        // ================= 管理者報告ロジック (独立画面用) =================
+        function renderManagerReports() {
+            const container = document.getElementById('board-manager-list');
+            if (managerReports.length === 0) {
+                container.innerHTML = '<div class="text-center text-gray-400 py-10"><i class="fa-solid fa-clipboard-check text-4xl mb-3"></i><p>現在、管理者からの連絡事項はありません。</p></div>';
+                return;
+            }
+            container.innerHTML = managerReports.map(r => {
+                const d = new Date(r.timestamp);
+                const dateStr = `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日 ${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}`;
+                return `
+                <div class="bg-white p-4 rounded-lg border-l-4 border-blue-500 shadow hover:shadow-md transition flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div class="flex-1 w-full">
+                        <div class="text-xs text-blue-600 mb-2 font-bold"><i class="fa-regular fa-clock"></i> 掲示: ${dateStr}</div>
+                        <div class="text-base text-gray-800 whitespace-pre-wrap leading-relaxed">${r.message}</div>
+                    </div>
+                    <div class="flex md:flex-col space-x-3 md:space-x-0 md:space-y-2 shrink-0 self-end md:self-center">
+                        <button onclick="openManagerModal('${r.id}')" class="text-gray-500 hover:text-blue-600 transition bg-gray-50 px-3 py-2 rounded border text-sm"><i class="fa-solid fa-pen mr-1"></i>編集</button>
+                        <button onclick="deleteManagerReport('${r.id}')" class="text-gray-500 hover:text-red-600 transition bg-gray-50 px-3 py-2 rounded border text-sm"><i class="fa-solid fa-trash mr-1"></i>削除</button>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        function openManagerModal(id = null) {
+            editingManagerId = id;
+            if (id) {
+                const r = managerReports.find(x => x.id === id);
+                document.getElementById('manager-msg').value = r.message;
+            } else {
+                document.getElementById('manager-msg').value = '';
+            }
+            document.getElementById('modal-manager').classList.remove('hidden');
+        }
+
+        function closeManagerModal() { document.getElementById('modal-manager').classList.add('hidden'); editingManagerId = null; }
+
+        function saveManagerReport() {
+            const msg = document.getElementById('manager-msg').value.trim();
+            if (!msg) return alert('連絡内容を入力してください。');
+            
+            if (editingManagerId) {
+                managerReports.find(x => x.id === editingManagerId).message = msg;
+            } else {
+                managerReports.unshift({ id: Date.now().toString(), timestamp: new Date().toISOString(), message: msg });
+            }
+            localStorage.setItem('dialysisManagerReports', JSON.stringify(managerReports));
+            closeManagerModal(); renderManagerReports();
+        }
+
+        function deleteManagerReport(id) {
+            if (confirm('この連絡を削除しますか？')) {
+                managerReports = managerReports.filter(x => x.id !== id);
+                localStorage.setItem('dialysisManagerReports', JSON.stringify(managerReports)); renderManagerReports();
+            }
+        }
+
+        // ================= 履歴画面表示 =================
         function renderHistory() {
             const q = document.getElementById('history-search').value.toLowerCase();
             document.getElementById('history-table-body').innerHTML = reports.filter(r => r.patientName.toLowerCase().includes(q) || r.patientId.includes(q))
@@ -703,7 +808,6 @@
             document.getElementById('detail-status').value = r.status;
             document.getElementById('detail-resolution').value = r.resolution || '';
 
-            // 履歴詳細画面でのサムネイル（ビューワー対応）
             document.getElementById('detail-photos').innerHTML = r.photos.map((src, idx) => `
                 <div class="relative border rounded aspect-square bg-gray-900 overflow-hidden group">
                     <img src="${src}" class="w-full h-full object-contain cursor-pointer" onclick="viewPhoto('${src}')" title="拡大表示">
